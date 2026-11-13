@@ -16,14 +16,105 @@ function el(tag, clase, texto) {
 }
 const $ = id => document.getElementById(id);
 
+// ============ Planilla de Google (CSV) ============
+// INICIO-PLANILLA
+// Convierte el texto CSV en una lista de filas (maneja comillas y comas dentro de un campo)
+function parsearCSV(texto) {
+  const filas = [];
+  let fila = [], campo = "", comillas = false;
+  texto = texto.replace(/^\uFEFF/, "");
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (comillas) {
+      if (c === '"') {
+        if (texto[i + 1] === '"') { campo += '"'; i++; } else { comillas = false; }
+      } else { campo += c; }
+    } else if (c === '"') {
+      comillas = true;
+    } else if (c === ",") {
+      fila.push(campo); campo = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && texto[i + 1] === "\n") i++;
+      fila.push(campo); filas.push(fila); fila = []; campo = "";
+    } else {
+      campo += c;
+    }
+  }
+  if (campo !== "" || fila.length) { fila.push(campo); filas.push(fila); }
+  return filas;
+}
+
+// "$11.500" -> 11500 ; "11500" -> 11500 ; "11.500,50" -> 11500.5
+function parsearPrecio(texto) {
+  const limpio = String(texto || "").replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(limpio);
+  return isNaN(n) ? null : n;
+}
+
+// Convierte las filas de la planilla en las categorías que usa la página
+function filasACategorias(filas) {
+  if (filas.length < 2) return [];
+  const quitarTildes = t => t.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const cab = filas[0].map(quitarTildes);
+  const col = nombre => cab.indexOf(nombre);
+  const iCat = col("categoria"), iPlato = col("plato"), iPrecio = col("precio");
+  if (iCat < 0 || iPlato < 0 || iPrecio < 0) throw new Error("Faltan columnas: categoria, plato, precio");
+  const iDesc = col("descripcion"), iTags = col("tags"), iDisp = col("disponible");
+
+  const categorias = new Map();   // mantiene el orden en que aparecen
+  for (const f of filas.slice(1)) {
+    const nombre = (f[iPlato] || "").trim();
+    const categoria = (f[iCat] || "").trim();
+    if (!nombre || !categoria) continue;
+
+    const disponible = iDisp >= 0 ? quitarTildes(f[iDisp] || "") : "";
+    if (["no", "n", "0", "false", "agotado"].includes(disponible)) continue;
+
+    const precio = parsearPrecio(f[iPrecio]);
+    if (precio === null) { console.warn("Plato sin precio válido, se omite:", nombre); continue; }
+
+    if (!categorias.has(categoria)) categorias.set(categoria, []);
+    categorias.get(categoria).push({
+      nombre,
+      precio,
+      descripcion: iDesc >= 0 ? (f[iDesc] || "").trim() : "",
+      tags: iTags >= 0 ? (f[iTags] || "").split(/[,;]/).map(t => t.trim()).filter(Boolean) : []
+    });
+  }
+  return Array.from(categorias, ([nombre, platos]) => ({ nombre, platos }));
+}
+// FIN-PLANILLA
+
 // ============ Estado del pedido ============
-let config = { activo: false, whatsapp: "" };
+let config = { activo: false, whatsapp: "", vigencia_minutos: 60 };
 let pedido = {};   // { "0-1": { nombre, precio, cant } }
 // La clave incluye la ruta, para que dos locales en el mismo dominio no se mezclen
 const CLAVE = "pedido:" + location.pathname + ":" + (mesa || "sin-mesa");
 
-try { pedido = JSON.parse(localStorage.getItem(CLAVE) || "{}"); } catch (e) { pedido = {}; }
-function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(pedido)); } catch (e) {} }
+// Se guarda el pedido junto con la hora del último cambio, para que venza solo
+let guardadoEn = 0;
+try {
+  const guardado = JSON.parse(localStorage.getItem(CLAVE) || "null");
+  if (guardado && guardado.items && guardado.guardadoEn) {
+    pedido = guardado.items;
+    guardadoEn = guardado.guardadoEn;
+  }
+} catch (e) { pedido = {}; }
+
+function guardar() {
+  guardadoEn = Date.now();
+  try { localStorage.setItem(CLAVE, JSON.stringify({ guardadoEn, items: pedido })); } catch (e) {}
+}
+
+// Si pasó más del tiempo permitido desde el último cambio, se descarta el pedido
+function descartarSiVencio() {
+  const limite = config.vigencia_minutos * 60 * 1000;
+  if (guardadoEn && Date.now() - guardadoEn > limite) {
+    pedido = {};
+    guardadoEn = 0;
+    try { localStorage.removeItem(CLAVE); } catch (e) {}
+  }
+}
 
 const items = () => Object.values(pedido);
 const totalPlatos = () => items().reduce((s, i) => s + i.cant, 0);
@@ -86,12 +177,13 @@ function aplicarTema(tema) {
 
 function dibujarMenu(menu) {
   config = Object.assign(config, menu.pedidos || {});
+  descartarSiVencio();
   aplicarTema(menu.tema);
 
   document.title = "Menú · " + menu.local;
   $("local").textContent = menu.local;
   $("subtitulo").textContent = menu.subtitulo || "";
-  $("actualizado").textContent = "Precios actualizados el " + menu.actualizado;
+  $("actualizado").textContent = menu.actualizado ? "Precios actualizados el " + menu.actualizado : "";
 
   if (menu.logo) {
     const logo = el("img", "logo");
@@ -233,9 +325,34 @@ function resaltarCategoriaActiva() {
   if (secciones.length > 0) activar(secciones[0].id);
 }
 
-// ============ Cargar los datos: se edita SOLO menu.json ============
-fetch("menu.json")
-  .then(r => r.json())
+// ============ Cargar los datos ============
+// Los platos vienen de la planilla de Google si menu.json tiene "planilla".
+// Si la planilla falla, se usan las categorías que haya escritas en menu.json (respaldo).
+async function cargarDatos() {
+  const menu = await fetch("menu.json").then(r => r.json());
+
+  if (menu.planilla) {
+    try {
+      const url = menu.planilla + (menu.planilla.includes("?") ? "&" : "?") + "t=" + Date.now();
+      const texto = await fetch(url, { cache: "no-store" }).then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.text();
+      });
+      const categorias = filasACategorias(parsearCSV(texto));
+      if (categorias.length > 0) {
+        menu.categorias = categorias;
+        menu.actualizado = "";   // con planilla no hay una fecha fija para mostrar
+      } else {
+        console.warn("La planilla no tiene platos, se usa menu.json");
+      }
+    } catch (e) {
+      console.warn("No se pudo leer la planilla, se usa menu.json", e);
+    }
+  }
+  return menu;
+}
+
+cargarDatos()
   .then(dibujarMenu)
   .catch(() => {
     const aviso = el("p", "error", "No se pudo cargar el menú. Si abriste index.html con doble clic, probá con la extensión Live Server de VS Code o subilo a GitHub Pages.");

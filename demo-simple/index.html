@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Menú</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+  <header class="portada" id="portada">
+    <h1 id="local">Menú</h1>
+    <p id="subtitulo"></p>
+    <p id="mesa-etiqueta" class="mesa-etiqueta" hidden></p>
+  </header>
+
+  <nav id="categorias" class="categorias" aria-label="Categorías del menú"></nav>
+  <main id="menu"></main>
+  <footer class="pie"><p id="actualizado"></p></footer>
+
+  <button id="barra-pedido" class="barra-pedido" hidden></button>
+
+  <section id="panel" class="panel" hidden aria-label="Tu pedido">
+    <div class="panel-caja">
+      <div class="panel-cab">
+        <h2>Tu pedido</h2>
+        <button id="cerrar" class="btn-texto">Cerrar</button>
+      </div>
+      <p id="panel-mesa" class="panel-mesa"></p>
+      <div id="panel-lista"></div>
+      <label for="nota">Aclaraciones</label>
+      <textarea id="nota" rows="2" placeholder="Ej: sin cebolla, bien cocida"></textarea>
+      <p class="panel-total">Total <span id="panel-total"></span></p>
+      <p class="panel-ayuda" id="panel-ayuda"></p>
+      <a id="btn-wsp" class="btn-principal" hidden target="_blank" rel="noopener">Enviar por WhatsApp</a>
+      <button id="vaciar" class="btn-texto">Vaciar pedido</button>
+    </div>
+  </section>
+
+  <script src="../shared/script.js"></script>
+</body>
+</html>

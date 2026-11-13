@@ -1,0 +1,136 @@
+{
+  "local": "La Esquina",
+  "subtitulo": "Pizzería y minutas · Alta Gracia",
+  "logo": "",
+  "actualizado": "12/11/2026",
+  "tema": {
+    "principal": "#12294a",
+    "secundario": "#1f4e8c",
+    "acento": "#e8b13a",
+    "fondo": "#f3f6f9"
+  },
+  "pedidos": {
+    "activo": true,
+    "whatsapp": "5493547304917"
+  },
+  "categorias": [
+    {
+      "nombre": "Pizzas",
+      "platos": [
+        {
+          "nombre": "Muzzarella",
+          "precio": 11500,
+          "descripcion": "Salsa de tomate, muzzarella y aceitunas.",
+          "tags": [
+            "vegetariano"
+          ]
+        },
+        {
+          "nombre": "Fugazzeta",
+          "precio": 13500,
+          "descripcion": "Cebolla caramelizada y mucho queso.",
+          "tags": [
+            "vegetariano"
+          ]
+        },
+        {
+          "nombre": "Napolitana",
+          "precio": 14000,
+          "descripcion": "Muzzarella, rodajas de tomate, ajo y albahaca.",
+          "tags": [
+            "vegetariano"
+          ]
+        },
+        {
+          "nombre": "Calabresa",
+          "precio": 14500,
+          "descripcion": "Muzzarella y longaniza calabresa."
+        }
+      ]
+    },
+    {
+      "nombre": "Empanadas",
+      "platos": [
+        {
+          "nombre": "Carne cortada a cuchillo",
+          "precio": 2200,
+          "descripcion": "Horno de barro. Jugosa y con huevo."
+        },
+        {
+          "nombre": "Jamón y queso",
+          "precio": 2100,
+          "descripcion": "Clásica de la casa."
+        },
+        {
+          "nombre": "Humita",
+          "precio": 2100,
+          "descripcion": "Choclo cremoso y cebolla de verdeo.",
+          "tags": [
+            "vegetariano"
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Minutas",
+      "platos": [
+        {
+          "nombre": "Milanesa a la napolitana",
+          "precio": 15500,
+          "descripcion": "Con papas fritas."
+        },
+        {
+          "nombre": "Suprema de pollo",
+          "precio": 14500,
+          "descripcion": "Con puré de papas."
+        },
+        {
+          "nombre": "Ensalada completa",
+          "precio": 9800,
+          "descripcion": "Lechuga, tomate, zanahoria, huevo y choclo.",
+          "tags": [
+            "vegetariano",
+            "sin TACC"
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Postres",
+      "platos": [
+        {
+          "nombre": "Flan casero",
+          "precio": 5200,
+          "descripcion": "Con dulce de leche y crema."
+        },
+        {
+          "nombre": "Vigilante",
+          "precio": 5000,
+          "descripcion": "Queso y dulce de batata."
+        }
+      ]
+    },
+    {
+      "nombre": "Bebidas",
+      "platos": [
+        {
+          "nombre": "Gaseosa 500 ml",
+          "precio": 2800
+        },
+        {
+          "nombre": "Agua mineral",
+          "precio": 2300
+        },
+        {
+          "nombre": "Cerveza artesanal",
+          "precio": 4800,
+          "descripcion": "Pinta de rubia, roja o negra."
+        },
+        {
+          "nombre": "Fernet con cola",
+          "precio": 6500
+        }
+      ]
+    }
+  ]
+}
